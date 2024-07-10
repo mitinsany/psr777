@@ -26,10 +26,10 @@ class TransactionService
         return $result;
     }
 
-    public function amountFixed(TransactionDTO $transactionDTO, float $rate): float
+    public function amountFixed(bool $isEur, float $amount, float $rate): float
     {
-        return ($transactionDTO->getCurrency()->isEUR() xor $rate == 0)
-                ? $this->currencyRateService->amountByRate($transactionDTO->getAmount(), $rate)
-                : $transactionDTO->getAmount();
+        return ($isEur xor $rate == 0)
+                ? $this->currencyRateService->amountByRate($amount, $rate)
+                : $amount;
     }
 }

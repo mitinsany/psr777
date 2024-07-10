@@ -2,31 +2,46 @@
 
 namespace App\Services\BinList;
 
-use App\Exceptions\BinListApiClientException;
+use App\Exceptions\BinListException;
 use App\Services\BinList\Response\GetByBinResponse;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 
 class BinListService implements BinListServiceInterface
 {
-    public function __construct(private BinListApiClientInterface $binListApiClient)
+    public function __construct(private Client $client, private array $config)
     {
     }
 
     /**
-     * @throws BinListApiClientException
+     * @throws BinListException
+     */
+    public function getByBinRequest(string $bin): string
+    {
+        try {
+            $response = $this->client->get(sprintf($this->config['url_lookup_bin'], $bin));
+        } catch (GuzzleException $e) {
+            throw new BinListException($e->getMessage());
+        }
+        return $response->getBody()->getContents();
+    }
+
+    /**
+     * @throws BinListException
      */
     public function getByBin(string $bin): GetByBinResponse
     {
-        $binListResponse = $this->binListApiClient->getByBin($bin);
-        if (!$binListResponse) {
-            throw new BinListApiClientException();
-        }
+        $binListResponse = $this->getByBinRequest($bin);
         $responseData = json_decode($binListResponse, true);
 
         return new GetByBinResponse($responseData);
     }
 
-    public function getCountryCodeByBin(string $bin): string
+    /**
+     * @throws BinListException
+     */
+    public function getCountryCodeByBin(string $bin): ?string
     {
-        return $this->getByBin($bin)->getCountry()->getAlpha2();
+        return $this->getByBin($bin)->getCountry()?->getAlpha2();
     }
 }
